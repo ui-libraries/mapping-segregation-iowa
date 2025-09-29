@@ -218,6 +218,7 @@
             <li><a href="pages/index-jc.html">Johnson County</a></li>
             <li><a href="pages/index-lc.html">Linn County</a></li>
             <li><a href="pages/index-pc.html">Polk County</a></li>
+            <li><a href="pages/index-dbq.html">Dubuque County</a></li>
           </ul>
         </div>
       </div>
@@ -313,10 +314,10 @@
     progressLegend.addTo(map);    
 
     // define a list of counties with data 
-    const dataCounties = ['Black Hawk', 'Johnson', 'Linn', 'Polk'];
+    const dataCounties = ['Black Hawk', 'Johnson', 'Linn', 'Polk', 'Dubuque'];
 
     // define a list of in progress counties
-    const progressCounties = ['Dubuque'];
+    const progressCounties = [];
 
     // define a function to set the fill color to skyblue if they are in the progressCounties list or #C4A484 if they are in the dataCounties list or #ffffff if they are not in either list
     function getColor(county) {
@@ -389,8 +390,13 @@
               layer.on('click', function(e) {
                 window.open('pages/index-pc.html', '_self');
               });
-            }           
-          } else {
+            } // if the user clicks on the county named 'Dubuque', open 'index-dbp.html'
+            else if (feature.properties.county === 'Dubuque') {
+              layer.on('click', function(e) {
+                window.open('pages/index-dbq.html', '_self');
+              });           
+            } 
+          }   else {
             // bind the tooltip to the layer
             layer.bindTooltip('<h3>' + feature.properties.county + ' County<br><i style="font-size:12px">Data not available</i></h3>', {
               sticky: true,
@@ -432,6 +438,12 @@
           } // open 'index-pc.html' if the user searches for 'Polk'
           else if (title == 'Polk') {
             window.open('pages/index-pc.html', '_self');
+          } // open 'index-dbq.html' if the user searches for 'Dubuque'
+          else if (title == 'Dubuque') {
+            window.open('pages/index-dbq.html', '_self');
+          } // open 'index-dbq.html' if the user searches for 'Linn'
+          else if (title == 'Linn') {
+            window.open('pages/index-lc.html', '_self');
           }
         },
       }));

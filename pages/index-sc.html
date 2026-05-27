@@ -7,7 +7,7 @@
   <!-- Set favicon with a .ico file -->
   <link rel="icon" type="image/x-icon" href="../img/favicon.ico">  
   <!-- Give the page a title -->
-  <title>Mapping Segregation in Black Hawk County, Iowa</title>
+  <title>Mapping Segregation in Polk County, Iowa</title>
   <!-- Add a link to the Leaflet CSS library so you can reference it for styling your map -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
   <!-- Embed Mulish and Merriweather fonts from Google -->
@@ -206,9 +206,9 @@
 <body>
   <!-- Header content -->
   <header>
-    
+    <!-- Change county name as needed -->
     <h1><a style="text-decoration:none; color:inherit" href="../index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Mapping Segregation in Iowa</a></h1><br>
-    <h2>Race restrictive covenants in Black Hawk County</h2>
+    <h2>Race restrictive covenants in Scott County</h2>
     
     <!-- Add a tab for "Information" on the same line and right align -->
     <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
@@ -296,7 +296,7 @@
     <!-- ui slider -->
     <div id="slider" class="leaflet-control">
       <!-- Use the first and last year of the time data as the min and max. Set the initial value as the last year. Set the steps at one year. -->
-      <input type="range" min="1914" max="1950" value="1950" step="1" class="slider" />
+      <input type="range" min="1913" max="1953" value="1953" step="1" class="slider" />
     </div> 
     <!-- temporal legend -->
     <div id='temporal'>
@@ -311,11 +311,13 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js"></script>
   <!-- for grouped layer control -->
   <script src="https://cdnjs.cloudflare.com/ajax/libs/leaflet-groupedlayercontrol/0.6.1/leaflet.groupedlayercontrol.min.js"></script>
+  <!-- Add a link to the Turf JavaScript library for spatial analysis -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/Turf.js/6.3.0/turf.min.js"></script>
   <script>
     
-    // Define bounding coordinates to prevent dragging too far from Black Hawk County
-    const southWest = L.latLng(41.797005, -93.033497),
-      northEast = L.latLng(43.141831, -91.581696),
+    // Define bounding coordinates to prevent dragging too far from Scott County
+    const southWest = L.latLng(41.35, -91.00),
+      northEast = L.latLng(41.75, -90.20),
       bounds = L.latLngBounds(southWest, northEast);
 
     // Initialize the map with fullscreen button
@@ -325,7 +327,8 @@
         position: 'topleft'
       }
     })
-    .setView([42.494559, -92.338884], 13)
+    // Change coordinate for the map view, reference from map shaper
+    .setView([41.5236, -90.5776], 12)
     .setMaxBounds(bounds);
 
     // define map options
@@ -384,6 +387,8 @@
     const petition = L.layerGroup();
     const subdivision = L.layerGroup();
     const parcel = L.layerGroup();
+    // Define one empty LayerGroup for all dots
+    const dotDensity = L.layerGroup().addTo(map);
 
     // add the layers to the map
     map.addLayer(petition);
@@ -410,11 +415,11 @@
 
     // define a function to color code by covenant type
     function getColorRestrictive(d) {
-      return d === 'pet' ? 'red' :
-        d === 'sub' ? 'orange' :
-        d === 'par' ? 'blue' :
+      return d === 'petition' ? 'red' :
+        d === 'subdivision' ? 'orange' :
+        d === 'parcel' ? 'blue' :
         'rgba(0,0,0,0.0)';
-    };
+    }; 
 
     // create legend for the covenants
     const covenantLegend = L.control({
@@ -428,9 +433,9 @@
 
       // generate a label with a colored square for each
       div.innerHTML +=
-        "<b style='font-size:14px'>Type of Covenant</b>" + '<br>' + '<i style="background:' + getColorRestrictive('pet') + '"></i> ' +
-        'Petition' + '<br>' + '<i style="background:' + getColorRestrictive('sub') + '"></i> ' +
-        'Subdivision' + '<br>' + '<i style="background:' + getColorRestrictive('par') + '"></i> ' + 'Parcel';
+        "<b style='font-size:14px'>Type of Covenant</b>" + '<br>' + '<i style="background:' + getColorRestrictive('petition') + '"></i> ' +
+        'Petition' + '<br>' + '<i style="background:' + getColorRestrictive('subdivision') + '"></i> ' +
+        'Subdivision' + '<br>' + '<i style="background:' + getColorRestrictive('parcel') + '"></i> ' + 'Parcel';
 
       return div;
 
@@ -439,13 +444,38 @@
     // add this legend to the map, because this legend is on by default
     covenantLegend.addTo(map);
 
-    // use jquery to load GeoJSON data
+    // use jquery to load GeoJSON data, change geojson file as needed
     $.when(
       $.getJSON('../data/IA-Towns.geojson'),
-      $.getJSON('../data/BH-Restrictive-Covenants.geojson'),
+      $.getJSON('../data/SC-Restrictive-Convenants.json'),
+      $.getJSON('../data/DSM_Census_1920.geojson'),
+      $.getJSON('../data/DSM_Census_1930.geojson'),
+      $.getJSON('../data/DSM_Census_1940.geojson')
       // when the files are done loading,
       // identify them with names and process them through a function
-    ).done(function(towns, restrictive) {
+    ).done(function(towns, restrictive, census1920, census1930, census1940) {
+
+
+// SOME TINKERING WITH DOT DENSITY - NEED TO CHECK
+
+      // Iterate through each feature of the 1920 census data and add dots to dotDensity
+      census1920[0].features.forEach(function(feature) {
+        const dots1920 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+        addDotsToLayerGroup(dots1920, dotDensity);
+      });
+
+      // Iterate through each feature of the 1930 census data and add dots to dotDensity
+      census1930[0].features.forEach(function(feature) {
+        const dots1930 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+        addDotsToLayerGroup(dots1930, dotDensity);
+      });
+
+      // Iterate through each feature of the 1940 census data and add dots to dotDensity
+      census1940[0].features.forEach(function(feature) {
+        const dots1940 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+        addDotsToLayerGroup(dots1940, dotDensity);
+      });
+
       
       const townBounds = L.geoJson(towns, {
         // style the layer
@@ -499,10 +529,10 @@
 
           return {
             stroke: 0.25,
-            color: getColorRestrictive(feature.properties.CV_type),
+            color: getColorRestrictive(feature.properties.REST_type),
             strokeOpacity: 1,
             weight: 0.25,
-            fillColor: getColorRestrictive(feature.properties.CV_type),
+            fillColor: getColorRestrictive(feature.properties.REST_type),
             fillOpacity: 0.5,
           };
         },
@@ -510,19 +540,19 @@
         onEachFeature: function(feature, layer) {
 
           // isolate the year of the feature
-          let year = /[^/]*/.exec(layer.feature.properties.CV_date)[0];
+          let year = /[^/]*/.exec(layer.feature.properties.REST_yr)[0];
 
           // isolate the type of restrictive covenant
-          let type = layer.feature.properties.CV_type;
+          let type = layer.feature.properties.REST_type;
 
-          if (type == 'pet') {
+          if (type == 'petition') {
             var restr = 'PETITION';
-          } else if (type == 'sub') {
+          } else if (type == 'subdivision') {
             var restr = 'SUBDIVISION';
-          } else if (type == 'par') {
+          } else if (type == 'parcel') {
             var restr = 'PARCEL';
           };
-          
+/*          
           // isolate the link to the scanned covenant
           let covenant = '../' + layer.feature.properties.rel_path;
           
@@ -531,13 +561,16 @@
           } else {
             var link = '</b><hr><a href="' + covenant + '" target="_blank">Click here to see the covenant.</a>';
           };
+*/
 
           // bind a popup window
-          layer.bindPopup("<h3><b>" + restr + ' RESTRICTION' + "</b><hr>LOT" + '<br><b>' + layer.feature.properties.legal + "</b><hr>RECORDER'S NUMBER" + '<br><b>' + layer.feature.properties.CV_number +
-            '</b><hr>' + 'RESTRICTION FILED: ' + '<br><b>' + layer.feature.properties.CV_date + link + '</h3>', {
-            closeButton: true
-          });    
-          
+          layer.bindPopup(
+            "<h3><b>" + restr + " RESTRICTION</b><hr>" +
+            "SUBDIVISION<br><b>" + layer.feature.properties.SUBDIVISIO + "</b><hr>" +
+            "YEAR FILED:<br><b>" + layer.feature.properties.REST_yr + "</b><br>" +
+            "BOOK/PAGE:<br><b>" + layer.feature.properties.REST_book + " / " + layer.feature.properties.REST_page + "</b></h3>"
+          );
+
           // change layer style on mouseover
           layer.on("mouseover", function(e) {
             layer.setStyle({
@@ -557,7 +590,7 @@
           });
 
           // if the covenant is a petition
-          if (type == 'pet') {
+          if (type == 'petition') {
             if (year <= currentYear) {
               petition.addLayer(layer); // add the layer to the layer group
             } else {
@@ -566,7 +599,7 @@
           };
 
           // if the covenant is a subdivision
-          if (type == 'sub') {
+          if (type == 'subdivision') {
             if (year <= currentYear) {
               subdivision.addLayer(layer); // add the layer to the layer group
             } else {
@@ -575,7 +608,7 @@
           };
 
           // if the covenant is a parcel
-          if (type == 'par') {
+          if (type == 'parcel') {
             if (year <= currentYear) {
               parcel.addLayer(layer); // add the layer to the layer group
             } else {
@@ -588,21 +621,21 @@
       }); // end restrictiveParcels
 
       // call functions defined below
-      sequenceUI(restrictiveParcels);
+      sequenceUI(restrictiveParcels, dotDensity, census1920, census1930, census1940); // calls the sequenceUI function to create the UI slider
       createTemporalLegend(currentYear);
-      updateParcels(restrictiveParcels, currentYear); // calls the updateParcels function to update the parcels data
+      updateParcels(restrictiveParcels, dotDensity, census1920, census1930, census1940, currentYear); // calls the updateParcels function to update the parcels data
 
     });
 
     // call the UI slider with a function called "sequenceUI"
-    function sequenceUI(restrictiveParcels) { // feed it the parcels data
+    function sequenceUI(restrictiveParcels, dotDensity, census1920, census1930, census1940) { // feed it the parcels and dot data
 
       // use the jQuery ajax method to get the slider element
       $('.slider')
         .on('input change', function() { // when the input changes...
           let currentYear = $(this).val(); // identify the year selected with "currentYear"
           createTemporalLegend(currentYear); // call the createTemporalLegend function
-          updateParcels(restrictiveParcels, currentYear); // calls the updateParcels function to update the parcels data
+          updateParcels(restrictiveParcels, dotDensity, census1920, census1930, census1940, currentYear); // calls the updateParcels function to update the parcels and dots data
         });
 
     }; // End sequenceUI function
@@ -616,19 +649,40 @@
 
 
     // add a function to update the restrictive covenants by selected year
-    function updateParcels(restrictiveParcels, currentYear) {
+    function updateParcels(restrictiveParcels, dotDensity, census1920, census1930, census1940, currentYear) {
+
+      // Hide the LayerGroup 
+      dotDensity.clearLayers();
+      
+      // Add the relevant year data back based on the selected year
+      if (parseInt(currentYear) <= 1925) {
+        census1920[0].features.forEach(function(feature) {
+          const dots1920 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+          addDotsToLayerGroup(dots1920, dotDensity);
+        });
+      } else if (parseInt(currentYear) <= 1935) {
+        census1930[0].features.forEach(function(feature) {
+          const dots1930 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+          addDotsToLayerGroup(dots1930, dotDensity);
+        });
+      } else if (parseInt(currentYear) <= 1953) {
+        census1940[0].features.forEach(function(feature) {
+          const dots1940 = generateDotsFromPolygon(turf.polygon(feature.geometry.coordinates[0]), feature.properties['bpop']);
+          addDotsToLayerGroup(dots1940, dotDensity);
+        });
+      }      
 
       // access each layer in the covenants data
       restrictiveParcels.eachLayer(function(layer) {
 
         // isolate the year of the feature
-        let year = /[^/]*/.exec(layer.feature.properties.CV_date)[0];
+        let year = /[^/]*/.exec(layer.feature.properties.REST_yr)[0];
 
         // isolate the type of restrictive covenant
-        let type = layer.feature.properties.CV_type;
+        let type = layer.feature.properties.REST_type;
 
         // if the covenant is a petition
-        if (type == 'pet') {
+        if (type == 'petition') {
           if (year <= currentYear) {
             petition.addLayer(layer); // add the layer to the layer group
           } else {
@@ -637,7 +691,7 @@
         };
 
         // if the covenant is a subdivision
-        if (type == 'sub') {
+        if (type == 'subdivision') {
           if (year <= currentYear) {
             subdivision.addLayer(layer); // add the layer to the layer group
           } else {
@@ -646,7 +700,7 @@
         };
 
         // if the covenant is a parcel
-        if (type == 'par') {
+        if (type == 'parcel') {
           if (year <= currentYear) {
             parcel.addLayer(layer); // add the layer to the layer group
           } else {
@@ -656,6 +710,46 @@
 
       }); 
 
+    };
+
+    // Function to generate dots inside the polygon based on the population
+    function generateDotsFromPolygon(polygon, population) {
+      const dots = [];
+
+      // Get the polygon bounds
+      const polygonBounds = turf.bbox(polygon);  // Bounding box of the polygon
+
+      // Generate a random point inside the polygon for each "unit" of the population
+      for (let i = 0; i < population; i++) {
+        let randomPoint;
+
+        do {
+          // Generate a random point within the bounding box
+          const randomLng = Math.random() * (polygonBounds[2] - polygonBounds[0]) + polygonBounds[0];
+          const randomLat = Math.random() * (polygonBounds[3] - polygonBounds[1]) + polygonBounds[1];
+          randomPoint = turf.point([randomLng, randomLat]);
+
+        } while (!turf.booleanPointInPolygon(randomPoint, polygon));  // Ensure the point is inside the polygon
+
+        // Add the valid point to the dots array
+        dots.push(randomPoint);
+      }
+
+      return dots;
+    };
+
+    // A helper function to add dots to a layer group
+    function addDotsToLayerGroup(dots, layerGroup) {
+      dots.forEach(dot => {
+        L.circleMarker([dot.geometry.coordinates[1], dot.geometry.coordinates[0]], {
+          radius: 1,
+          fillColor: "black",
+          color: "#000",
+          weight: 0,
+          opacity: 0.7,
+          fillOpacity: 0.7
+        }).addTo(layerGroup);
+      });
     };
 
   </script>

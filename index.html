@@ -219,6 +219,7 @@
             <li><a href="pages/index-lc.html">Linn County</a></li>
             <li><a href="pages/index-pc.html">Polk County</a></li>
             <li><a href="pages/index-dbq.html">Dubuque County</a></li>
+            <li><a href="pages/index-sc.html">Scott County</a></li>
           </ul>
         </div>
       </div>
@@ -314,7 +315,7 @@
     progressLegend.addTo(map);    
 
     // define a list of counties with data 
-    const dataCounties = ['Black Hawk', 'Johnson', 'Linn', 'Polk', 'Dubuque'];
+    const dataCounties = ['Black Hawk', 'Johnson', 'Linn', 'Polk', 'Dubuque', 'Scott'];
 
     // define a list of in progress counties
     const progressCounties = [];
@@ -395,6 +396,11 @@
               layer.on('click', function(e) {
                 window.open('pages/index-dbq.html', '_self');
               });           
+            } // if the user clicks on the county named 'Scott', open 'index-sc.html'
+            else if (feature.properties.county === 'Scott') {
+              layer.on('click', function(e) {
+                window.open('pages/index-sc.html', '_self');
+              });           
             } 
           }   else {
             // bind the tooltip to the layer
@@ -444,6 +450,9 @@
           } // open 'index-dbq.html' if the user searches for 'Linn'
           else if (title == 'Linn') {
             window.open('pages/index-lc.html', '_self');
+          } // open 'index-sc.html' if the user searches for 'Scott'
+          else if (title == 'Scott') {
+            window.open('pages/index-sc.html', '_self');
           }
         },
       }));

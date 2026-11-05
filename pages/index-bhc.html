@@ -564,8 +564,11 @@
       minZoom: 10,
     };
 
+    // CARTO basemap API key (rotate or restrict it in the CARTO Basemaps dashboard if needed)
+    const cartoApiKey = 'cb1_3m8z_3_fadcc487240da45ef8d0e320';
+
     // add CartoDB.Voyager basemap to map
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=' + cartoApiKey, {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 20

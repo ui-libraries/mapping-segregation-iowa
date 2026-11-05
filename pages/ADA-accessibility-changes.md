@@ -1,6 +1,6 @@
 # Accessibility Changes: Mapping Segregation in Iowa (county map pages)
 
-**Files updated:** `index-bhc.html`, `index-jc.html`, `index-lc.html`, `index-pc.html`, `index-dbq.html`, `index-sc.html`
+**Files updated:** `index.html` (landing page, see section 6), `index-bhc.html`, `index-jc.html`, `index-lc.html`, `index-pc.html`, `index-dbq.html`, `index-sc.html`
 **Target standard:** WCAG 2.1 Level AA (the benchmark commonly used for ADA Title II/III compliance)
 
 > **Important caveat.** I can't certify legal ADA compliance. These changes address the WCAG 2.1 AA failures I found by reading the code. I validated the HTML structure and JavaScript syntax and tested the new data-table logic against sample records. I could **not** load the real GeoJSON data or test in a browser or screen reader, so please do a manual pass (see "Recommended testing" at the end).
@@ -75,3 +75,35 @@ All values are HTML-escaped; empty values read "Not available".
 3. Zoom to 200% and 400% (and a 320px-wide window) and check nothing is cut off.
 4. Run axe DevTools or WAVE on each page with real data loaded.
 5. Check the new colors with a color-blindness simulator.
+
+---
+
+## 6. Landing page (`index.html`)
+
+The same fixes from section 1 were applied to the Iowa county-selection page (viewport tag, skip link, landmarks, one `<h1>`, disclosure-pattern menus with correct focus order, no inline `onmouseover`, header contrast, focus outlines, rem font sizes, reflowing header, legend as a labelled list with bordered swatches, reduced-motion support, `<noscript>` message, visible error if the county data fails to load). Menu links keep their `pages/…` paths. Page-specific changes:
+
+| Problem | WCAG | Fix |
+|---|---|---|
+| Counties could only be opened by **clicking the map** (mouse-only); map shapes aren't focusable | 2.1.1, 1.1.1 | Added a **"County list view"** toggle that opens a panel listing every county with data as a real link (sorted alphabetically). Escape closes it and the map is made `inert` while it is open |
+| County tooltips (`<h3>`) were hover-only and used false headings | 1.3.1, 1.4.13 | Tooltip text now uses a styled `<div>`; the list view carries the same information |
+| County search box (leaflet-search) had no label; its buttons had no names | 4.1.2, 3.3.2 | Added `aria-label`s at runtime: "Search for a county with map data", "Search", "Clear search" |
+| Legend ("Data Availability") relied on color and tiny text | 1.4.1, 1.4.3 | Rebuilt as a labelled group and list; swatches have a visible border |
+| Map had no name or instructions | 1.1.1 | `role="region"`, `aria-label`, and `aria-describedby` help text |
+
+Not changed: the county search results dropdown comes from the leaflet-search plugin. It supports arrow keys, but I could not test it, so please verify it with a keyboard and screen reader. The county list view is the guaranteed alternative.
+
+## 7. CARTO basemap API key (all seven pages)
+
+CARTO now requires a free API key on its raster basemaps; without one, tiles show an "API KEY REQUIRED" watermark. Per CARTO's documentation, the key is added to the tile URL as a `key` parameter. On every page, the tile URL is now:
+
+```js
+const cartoApiKey = 'cb1_3m8z_3_fadcc487240da45ef8d0e320';
+L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=' + cartoApiKey, { ... })
+```
+
+The key lives in one `cartoApiKey` constant near the basemap code on each page, so it is easy to rotate. Notes:
+
+- **The key is visible in the page source** (unavoidable for client-side maps). In the CARTO Basemaps dashboard (dashboard.basemaps.carto.com) you can restrict the key to your website's domain. Be aware that a `same-origin`-only restriction breaks Leaflet image tiles, and `file://` pages send no origin, so test locally with an unrestricted key or a local web server.
+- If you still see the watermark after deploying, force-refresh; browsers and CARTO's CDN both cache tiles.
+- The free tier covers 5 million tile requests per month.
+- I kept the existing `{r}` retina suffix and `{s}` subdomains. If tiles ever fail to load, try the plain `{z}/{x}/{y}.png` form from CARTO's docs.

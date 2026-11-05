@@ -4,6 +4,7 @@
 
 <head>
   <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
   <!-- Set favicon with a .ico file -->
   <link rel="icon" type="image/x-icon" href="img/favicon.ico">
   <!-- Give the page a title -->
@@ -12,222 +13,520 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.6.0/dist/leaflet.css" />
   <!-- Embed Mulish and Merriweather fonts from Google -->
   <link rel="preconnect" href="https://fonts.gstatic.com">
-  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300&family=Mulish&display=swap" rel="stylesheet">
-  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@300&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Merriweather:wght@300;400;700&family=Mulish:wght@400;700&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Lato:wght@400;700&display=swap" rel="stylesheet">
   <!-- Add leaflet-search css library -->
   <link rel="stylesheet" href="https://unpkg.com/leaflet-search/dist/leaflet-search.min.css" />
   <!-- All the CSS code goes inside the style tags below -->
   <style>
-    /* style the body */
+    /* ---------- Base layout ---------- */
+    html { height: 100%; }
+
     body {
-      margin: 0px;
-      height: 100%;
+      margin: 0;
+      height: 100vh;
+      height: 100dvh;
       width: 100%;
+      display: flex;
+      flex-direction: column;
+      font-family: 'Mulish', sans-serif;
+      color: #1a1a1a;
     }
 
-    /* style the map */
+    [hidden] { display: none !important; }
+
+    /* Text that is available to screen readers only */
+    .visually-hidden {
+      position: absolute !important;
+      width: 1px;
+      height: 1px;
+      margin: -1px;
+      padding: 0;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      clip-path: inset(50%);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    /* Skip link: hidden until it receives keyboard focus */
+    .skip-link {
+      position: absolute;
+      left: 0.5rem;
+      top: -4rem;
+      z-index: 3000;
+      padding: 0.6rem 1rem;
+      background: #ffffff;
+      color: #000000;
+      font-weight: 700;
+      border: 2px solid #000000;
+      border-radius: 4px;
+    }
+    .skip-link:focus { top: 0.5rem; }
+
+    /* ---------- Header and navigation ---------- */
+    header {
+      position: relative;
+      z-index: 900;
+      flex: 0 0 auto;
+      box-sizing: border-box;
+      min-height: 60px;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.25rem 1rem;
+      padding: 0.25rem 0.75rem;
+      /* darker start color so light header text meets 4.5:1 contrast */
+      background: linear-gradient(#8a4b38, #1a1a1a);
+      box-shadow: 0px 5px 5px black;
+      color: #f7f4ea;
+    }
+
+    .site-name {
+      margin: 0;
+      font-family: 'Mulish', sans-serif;
+      font-size: 1.375rem;
+      line-height: 1.2;
+    }
+
+    .site-name a { color: #f7f4ea; text-decoration: none; }
+
+    .page-subtitle {
+      margin: 0;
+      font-family: 'Merriweather', serif;
+      font-size: 0.875rem;
+      font-weight: 400;
+      line-height: 1.3;
+      color: #f7f4ea;
+    }
+
+    .site-nav { margin-left: auto; }
+
+    .nav-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.25rem;
+      list-style: none;
+      margin: 0;
+      padding: 0;
+    }
+
+    .tab-link,
+    .nav-link {
+      display: inline-block;
+      box-sizing: border-box;
+      min-height: 44px;
+      padding: 0.6rem 0.7rem;
+      margin: 0;
+      font-family: 'Merriweather', serif;
+      font-size: 0.875rem;
+      line-height: 1.3;
+      color: #f7f4ea;
+      background: none;
+      border: 0;
+      border-radius: 3px;
+      text-decoration: none;
+      cursor: pointer;
+    }
+
+    /* hover and keyboard focus use more than a color change */
+    .tab-link:hover,
+    .nav-link:hover,
+    .site-name a:hover,
+    .tab-link[aria-expanded="true"] {
+      color: #ffffff;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    header a:focus-visible,
+    header button:focus-visible {
+      outline: 3px solid #ffffff;
+      outline-offset: 2px;
+    }
+
+    .dropdown { position: relative; }
+
+    .dropdown-content {
+      position: absolute;
+      top: 100%;
+      left: 0;
+      z-index: 1000;
+      margin-top: 2px;
+    }
+
+    /* keep the right-hand menus inside the window */
+    .nav-list > li:nth-last-child(-n+3) .dropdown-content { left: auto; right: 0; }
+
+    .dropdown-container {
+      min-width: 11.5rem;
+      background-color: #fbfbf5;
+      border: 1px solid #767676;
+      border-radius: 4px;
+      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
+      padding: 6px;
+    }
+
+    .dropdown-container ul { list-style: none; padding: 0; margin: 0; }
+
+    .dropdown-container ul li a {
+      display: block;
+      padding: 0.45rem 0.6rem;
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.9375rem;
+      text-decoration: none;
+      color: #1a1a1a;
+    }
+
+    .dropdown-container ul li a:hover { color: #7a0000; text-decoration: underline; }
+
+    .dropdown-container ul li a[aria-current="page"] { font-weight: 700; }
+
+    .dropdown-container a:focus-visible {
+      outline: 3px solid #005fcc;
+      outline-offset: -3px;
+    }
+
+    /* ---------- Main area, toolbar, map ---------- */
+    main {
+      flex: 1 1 auto;
+      min-height: 0;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .map-toolbar {
+      flex: 0 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 0.4rem 1rem;
+      padding: 0.4rem 0.75rem;
+      background: #f3eee3;
+      border-bottom: 1px solid #767676;
+      font-size: 0.875rem;
+    }
+
+    .map-toolbar p { margin: 0; }
+
+    .map-toolbar button {
+      min-height: 36px;
+      padding: 0.3rem 0.9rem;
+      font: inherit;
+      font-weight: 700;
+      color: #1a1a1a;
+      background: #ffffff;
+      border: 2px solid #5a2d1f;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+
+    .map-toolbar button[aria-pressed="true"] { color: #ffffff; background: #5a2d1f; }
+
+    .map-toolbar button:focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+
+    .load-error { color: #8a0000; font-weight: 700; }
+
+    .map-wrap {
+      position: relative;
+      flex: 1 1 auto;
+      min-height: 320px;
+    }
+
     #map {
       position: absolute;
-      width: 100%;
-      top: 60px;
+      top: 0;
+      right: 0;
       bottom: 0;
+      left: 0;
       z-index: 700;
     }
 
-    /* Add banner to header background */
-    header {
-      /*background-image: url('background image url here');*/
-      position: fixed;
-      width: 100%;
-      height: 60px;
-      /*background-color: #000000;*/
-      background: linear-gradient(#ac6853, black);
-      box-shadow: 0px 5px 5px black;
-      z-index: 800;
+    .leaflet-container:focus-visible { outline: 3px solid #005fcc; outline-offset: -3px; }
+
+    .leaflet-control a:focus-visible,
+    .leaflet-control input:focus-visible { outline: 3px solid #005fcc; outline-offset: 1px; }
+
+    /* ---------- Popups and tooltips ---------- */
+    .popup-text {
+      font-family: 'Lato', sans-serif;
+      font-size: 0.9375rem;
+      line-height: 1.4;
+      color: #111111;
+      font-weight: 400;
+      margin: 0.5em 0;
     }
 
-    /* Set and style fonts for text in map */
-    h1 {
-      font-family: 'Mulish', sans-serif;
-      font-size: 22px;
-      display: inline-block;
-      color: #f7f4ea;
-      margin-top: 0.10em;
-      margin-bottom: 0.0em;
-      margin-left: 0.5em;
-      margin-right: 0;
-      font-weight: normal;
-    }
+    .leaflet-popup-content a { color: #0b4f8a; text-decoration: underline; }
 
-    h2 {
-      font-family: 'Merriweather', serif;
-      font-size: 14px;
-      display: inline-block;
-      color: #f7f4ea;
-      margin-top: 0.0em;
-      margin-bottom: 0.0em;
-      margin-left: 0.9em;
-      margin-right: 0;
-      font-weight: normal;
-    }
+    .leaflet-popup-close-button:focus-visible { outline: 3px solid #005fcc; outline-offset: 1px; }
 
-    /* Style the text in the popup */
-    h3 {
-      font-family: 'Mulish', sans-serif;
-      font-size: 14px;
-      color: black;
-      font-weight: normal;
-    }
-
-    /* Style for the dropdown container */
-    .dropdown-container {
-      background-color: #fbfbf5;
-      border: 1px solid #ccc;
-      border-radius: 4px;
-      box-shadow: 0px 8px 16px 0px rgba(0, 0, 0, 0.2);
-      padding: 10px;
-    }
-
-    /* Style for the list items */
-    .dropdown-container ul {
-      padding: 0;
-      margin: 0;
-    }
-
-    .dropdown-container ul li {
-      margin-bottom: 0px;
-    }
-
-    /* Style for the links */
-    .dropdown-container ul li a {
-      text-decoration: none;
-      color: #333;
-    }
-
-    /* Style for the links on hover */
-    .dropdown-container ul li a:hover {
-      color: maroon;
-    }
-
-    a {
-      color: #f7f4ea;
-    }
-
-    /* Style the legend */
+    /* ---------- Legend ---------- */
     .legend {
-      background-color: rgba(255, 255, 255, 0.7);
+      background-color: rgba(255, 255, 255, 0.94);
       border-radius: 3px;
       bottom: 30px;
-      width: 230px;
+      width: auto;
+      min-width: 190px;
+      max-width: 280px;
       box-shadow: 0px 0px 0px 2px rgba(0, 0, 0, 0.3);
-      font: 12px/20px 'Mulish', sans-serif;
+      font: 0.875rem/1.3 'Mulish', sans-serif;
       padding: 10px;
       position: absolute;
       right: 0px;
       z-index: 1;
-      line-height: 18px;
-      color: #555;
+      color: #1a1a1a;
     }
+
+    .legend .legend-title { margin: 0 0 0.25rem; font-size: 0.9375rem; font-weight: 700; }
+
+    .legend ul { list-style: none; margin: 0 0 0.5rem; padding: 0; }
+    .legend ul:last-child { margin-bottom: 0; }
+
+    .legend li { display: flex; align-items: flex-start; gap: 6px; margin: 0.15rem 0; }
 
     .legend i {
-      width: 10px;
-      height: 10px;
-      float: left;
-      margin-right: 5px;
-      margin-top: 4px;
-      opacity: 0.7;
+      flex: 0 0 14px;
+      width: 14px;
+      height: 14px;
+      margin-top: 2px;
+      opacity: 0.85;
+      border: 1px solid rgba(0, 0, 0, 0.6);
     }
 
+    /* ---------- Time slider ---------- */
+    #slider-control {
+      position: absolute;
+      bottom: 10px;
+      left: 10px;
+      z-index: 800;
+      display: flex;
+      align-items: stretch;
+      gap: 6px;
+      width: min(380px, calc(100% - 20px));
+    }
+
+    #temporal,
+    #slider {
+      display: flex;
+      align-items: center;
+      box-sizing: border-box;
+      padding: 4px 10px;
+      background-color: rgba(255, 255, 255, 0.94);
+      border-radius: 3px;
+      box-shadow: 0px 0px 0px 2px rgba(0, 0, 0, 0.3);
+    }
+
+    #temporal { flex: 0 0 auto; }
+
+    #temporal span {
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.9375rem;
+      font-weight: 700;
+      white-space: nowrap;
+      color: #1a1a1a;
+    }
+
+    #slider { flex: 1 1 120px; min-width: 0; float: none; clear: none; }
+
+    #slider input[type="range"] {
+      width: 100%;
+      min-width: 90px;
+      min-height: 24px;
+      margin: 0;
+      accent-color: #8a4b38;
+    }
+
+    #slider input[type="range"]:focus-visible { outline: 3px solid #005fcc; outline-offset: 3px; }
+
+    .leaflet-control-layers-expanded {
+      font-family: 'Mulish', sans-serif;
+      font-size: 0.875rem;
+      color: #1a1a1a;
+      background-color: rgba(255, 255, 255, 0.94);
+    }
+
+    .leaflet-control-zoom a { background-color: rgba(255, 255, 255, 0.94); }
+
+    /* ---------- Data table panel (text alternative to the map) ---------- */
+    .data-panel {
+      position: absolute;
+      top: 0;
+      right: 0;
+      bottom: 56px; /* leaves the year slider usable underneath */
+      left: 0;
+      z-index: 850;
+      box-sizing: border-box;
+      overflow: auto;
+      padding: 1rem;
+      background: #ffffff;
+      border-bottom: 2px solid #8a4b38;
+    }
+
+    .data-panel:focus-visible { outline: 3px solid #005fcc; outline-offset: -3px; }
+
+    .data-panel h2 { margin: 0 0 0.5rem; font-size: 1.25rem; }
+    .data-panel h3 { margin: 1.5rem 0 0.5rem; font-size: 1.0625rem; }
+    .data-panel p { margin: 0.4rem 0; max-width: 60rem; }
+
+    .data-table {
+      border-collapse: collapse;
+      width: 100%;
+      font-size: 0.9375rem;
+    }
+
+    .data-table caption {
+      text-align: left;
+      font-weight: 700;
+      padding: 0.5rem 0;
+    }
+
+    .data-table th,
+    .data-table td {
+      text-align: left;
+      vertical-align: top;
+      padding: 0.4rem 0.6rem;
+      border: 1px solid #767676;
+    }
+
+    .data-table thead th {
+      position: sticky;
+      top: 0;
+      background: #efe7d6;
+      color: #1a1a1a;
+    }
+
+    .data-table tbody tr:nth-child(even) { background: #f7f4ea; }
+
+    .data-table a { color: #0b4f8a; text-decoration: underline; }
+    .data-table a:focus-visible { outline: 3px solid #005fcc; outline-offset: 2px; }
+
+    @media (max-width: 600px) {
+      .site-nav { margin-left: 0; width: 100%; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      * { scroll-behavior: auto !important; transition: none !important; animation: none !important; }
+    }
+  
+
+    /* landing page has no slider, so the list panel can use the full map height */
+    .data-panel { bottom: 0; }
+    .data-panel ul { margin: 0.5rem 0; padding-left: 1.25rem; }
+    .data-panel li { margin: 0.35rem 0; }
+    .data-panel a { color: #0b4f8a; text-decoration: underline; }
   </style>
 </head>
 
 <body>
+  <a class="skip-link" href="#main-content">Skip to map</a>
+
   <!-- Header content -->
   <header>
-    
-    <h1><a style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Mapping Segregation in Iowa</a></h1><br>
-    <h2><a style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Race restrictive covenants in Iowa counties</a></h2>
-    
-    <!-- Add a tab for "Information" on the same line and right align -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a style="text-decoration:none; color:inherit" href="pages/introduction.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">About</a></h2>
+    <div class="site-title">
+      <p class="site-name"><a href="index.html">Mapping Segregation in Iowa</a></p>
+      <h1 class="page-subtitle">Race restrictive covenants in Iowa counties</h1>
     </div>
 
-    <!-- Add a tab for "Learn More" on the same line, right align, and provide a dropdown menu on click -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a class="tab-link" style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Learn More</a></h2>
-      <div class="dropdown-content restrictions-content" style="display: none; position: absolute;">
-        <div class="dropdown-container" style="width: 134px;">
-          <ul style="list-style-type: none; padding: 0;">
-            <li><a href="pages/deedcovs.html">Deed Covenants 101</a></li>
-            <li><a href="pages/lawcovs.html">Covenants and the Law</a></li>
-            <li><a href="pages/mattercovs.html">Why Covenants Matter</a></li>
-            <li><a href="pages/other.html">Other Cities</a></li>
-            <li><a href="pages/resources.html">Resources and Links</a></li>
-          </ul>
-        </div>
-      </div>
-    </div> 
-
-    <!-- Add a tab for "Demographics" on the same line, right align, and provide a dropdown menu on click -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a class="tab-link" style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Demographics</a></h2>
-      <div class="dropdown-content restrictions-content" style="display: none; position: absolute;">
-        <div class="dropdown-container" style="width: 134px;">
-          <ul style="list-style-type: none; padding: 0;">
-            <li><a href="pages/demo-bhc.html">Black Hawk County</a></li>
-            <li><a href="pages/demo-jc.html">Johnson County</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>    
-
-    <!-- Add a tab for "Segregation" on the same line, right align, and provide a dropdown menu on click -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a class="tab-link" style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Segregation</a></h2>
-      <div class="dropdown-content restrictions-content" style="display: none; position: absolute;">
-        <div class="dropdown-container" style="width: 134px;">
-          <ul style="list-style-type: none; padding: 0;">
-            <li><a href="pages/seg-bhc.html">Black Hawk County</a></li>
-            <li><a href="pages/seg-jc.html">Johnson County</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>      
-
-    <!-- Add a tab for "Restrictions" on the same line, right align, and provide a dropdown menu on click -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a class="tab-link" style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Restrictions</a></h2>
-      <div class="dropdown-content restrictions-content" style="display: none; position: absolute;">
-        <div class="dropdown-container" style="width: 134px;">
-          <ul style="list-style-type: none; padding: 0;">
-            <li><a href="pages/restr-bhc.html">Black Hawk County</a></li>
-            <li><a href="pages/restr-jc.html">Johnson County</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>    
-    
-    <!-- Add a tab for "Maps" on the same line, right align, and provide a dropdown menu on click -->
-    <div style="margin-right: 10px; float: right; position: relative;" class="dropdown">
-      <h2 style="margin-right: 10px; padding: 0px; display: inline-block"><a class="tab-link" style="text-decoration:none; color:inherit" href="index.html" onmouseover="this.style.color='skyblue'" onmouseout="this.style.color='inherit'">Maps</a></h2>
-      <div class="dropdown-content maps-content" style="display: none; position: absolute;">
-        <div class="dropdown-container" style="width: 134px;">
-          <ul style="list-style-type: none; padding: 0;">
-            <li><a href="pages/index-bhc.html">Black Hawk County</a></li>
-            <li><a href="pages/index-jc.html">Johnson County</a></li>
-            <li><a href="pages/index-lc.html">Linn County</a></li>
-            <li><a href="pages/index-pc.html">Polk County</a></li>
-            <li><a href="pages/index-dbq.html">Dubuque County</a></li>
-            <li><a href="pages/index-sc.html">Scott County</a></li>
-          </ul>
-        </div>
-      </div>
-    </div>    
-
+    <nav class="site-nav" aria-label="Main">
+      <ul class="nav-list">
+        <li class="dropdown">
+          <button type="button" class="tab-link" aria-expanded="false" aria-controls="menu-maps">Maps</button>
+          <div class="dropdown-content" id="menu-maps" hidden>
+            <div class="dropdown-container">
+              <ul>
+              <li><a href="pages/index-bhc.html">Black Hawk County</a></li>
+              <li><a href="pages/index-jc.html">Johnson County</a></li>
+              <li><a href="pages/index-lc.html">Linn County</a></li>
+              <li><a href="pages/index-pc.html">Polk County</a></li>
+              <li><a href="pages/index-dbq.html">Dubuque County</a></li>
+              <li><a href="pages/index-sc.html">Scott County</a></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li class="dropdown">
+          <button type="button" class="tab-link" aria-expanded="false" aria-controls="menu-restr">Restrictions</button>
+          <div class="dropdown-content" id="menu-restr" hidden>
+            <div class="dropdown-container">
+              <ul>
+              <li><a href="pages/restr-bhc.html">Black Hawk County</a></li>
+              <li><a href="pages/restr-jc.html">Johnson County</a></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li class="dropdown">
+          <button type="button" class="tab-link" aria-expanded="false" aria-controls="menu-seg">Segregation</button>
+          <div class="dropdown-content" id="menu-seg" hidden>
+            <div class="dropdown-container">
+              <ul>
+              <li><a href="pages/seg-bhc.html">Black Hawk County</a></li>
+              <li><a href="pages/seg-jc.html">Johnson County</a></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li class="dropdown">
+          <button type="button" class="tab-link" aria-expanded="false" aria-controls="menu-demo">Demographics</button>
+          <div class="dropdown-content" id="menu-demo" hidden>
+            <div class="dropdown-container">
+              <ul>
+              <li><a href="pages/demo-bhc.html">Black Hawk County</a></li>
+              <li><a href="pages/demo-jc.html">Johnson County</a></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li class="dropdown">
+          <button type="button" class="tab-link" aria-expanded="false" aria-controls="menu-learn">Learn More</button>
+          <div class="dropdown-content" id="menu-learn" hidden>
+            <div class="dropdown-container">
+              <ul>
+              <li><a href="pages/deedcovs.html">Deed Covenants 101</a></li>
+              <li><a href="pages/lawcovs.html">Covenants and the Law</a></li>
+              <li><a href="pages/mattercovs.html">Why Covenants Matter</a></li>
+              <li><a href="pages/other.html">Other Cities</a></li>
+              <li><a href="pages/resources.html">Resources and Links</a></li>
+              </ul>
+            </div>
+          </div>
+        </li>
+        <li><a class="nav-link" href="pages/introduction.html">About</a></li>
+      </ul>
+    </nav>
   </header>
-  <!-- The map -->
-  <div id="map"></div>
+
+  <main id="main-content">
+    <noscript><p>This interactive map needs JavaScript. A list of counties with map data is available in the navigation menu under “Maps.”</p></noscript>
+
+    <div class="map-toolbar">
+      <button type="button" id="table-toggle" aria-pressed="false" aria-controls="data-panel">County list view</button>
+      <p id="map-help">Select a shaded county on the map to open its map page. Keyboard users can use the county search box on the map or the county list view, which lists every county with data as a link.</p>
+      <p id="load-error" class="load-error" role="alert" hidden></p>
+    </div>
+
+    <div class="map-wrap">
+      <!-- The map -->
+      <div id="map" role="region" aria-label="Interactive map of Iowa counties; shaded counties have map data" aria-describedby="map-help"></div>
+
+      <!-- Text alternative to the map -->
+      <section id="data-panel" class="data-panel" aria-labelledby="data-panel-title" tabindex="0" hidden>
+        <h2 id="data-panel-title">Counties with map data</h2>
+        <p>Choose a county to open its map of race restrictive covenants. Data for other Iowa counties is not available yet. Press Escape or choose “County list view” again to return to the map.</p>
+        <ul>
+        <li><a href="pages/index-bhc.html">Black Hawk County</a></li>
+        <li><a href="pages/index-dbq.html">Dubuque County</a></li>
+        <li><a href="pages/index-jc.html">Johnson County</a></li>
+        <li><a href="pages/index-lc.html">Linn County</a></li>
+        <li><a href="pages/index-pc.html">Polk County</a></li>
+        <li><a href="pages/index-sc.html">Scott County</a></li>
+        </ul>
+      </section>
+    </div>
+  </main>
+
   <!-- Add a link to the Leaflet JavaScript library so you can reference it for building your map -->
   <script src="https://unpkg.com/leaflet@1.6.0/dist/leaflet.js"></script>
   <!-- Add a link to the jQuery JavaScript library so you can leverage ajax methods to load your data -->
@@ -236,8 +535,12 @@
   <script src="https://unpkg.com/leaflet-search/dist/leaflet-search.min.js"></script>
   <script>
 
+    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
     // define map options
     const mapOptions = {
+      zoomAnimation: !prefersReducedMotion,
+      fadeAnimation: !prefersReducedMotion,
       center: [42.07, -93.5], // center the map on the coordinates for Iowa
       zoom: 8,
       minZoom: 5,
@@ -247,49 +550,102 @@
     // define the map with the options above
     const map = L.map("map", mapOptions);
 
+    // CARTO basemap API key (rotate or restrict it in the CARTO Basemaps dashboard if needed)
+    const cartoApiKey = 'cb1_3m8z_3_fadcc487240da45ef8d0e320';
+
     // add CartoDB.Voyager basemap to map
-    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png', {
+    L.tileLayer('https://{s}.basemaps.cartocdn.com/rastertiles/voyager/{z}/{x}/{y}{r}.png?key=' + cartoApiKey, {
       attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
       subdomains: 'abcd',
       maxZoom: 20
     }).addTo(map);
 
-    // Function to close the dropdowns
-    function closeDropdowns() {
-      var dropdownContents = document.querySelectorAll(".dropdown-content");
-      dropdownContents.forEach(function (content) {
-        content.style.display = "none";
+    // =====================================================================
+    // ACCESSIBILITY SUPPORT
+    // =====================================================================
+
+    // --- Dropdown navigation (WAI-ARIA disclosure pattern) ---
+    // Buttons toggle aria-expanded; Escape and clicking/tabbing away close the menu.
+    const menuButtons = document.querySelectorAll('.tab-link');
+
+    function closeDropdowns(exceptButton) {
+      menuButtons.forEach(function (button) {
+        if (button === exceptButton) { return; }
+        button.setAttribute('aria-expanded', 'false');
+        document.getElementById(button.getAttribute('aria-controls')).hidden = true;
       });
-    };    
+    }
 
-    // show dropdown content
-    document.addEventListener("DOMContentLoaded", function() {
-      var tabLinks = document.querySelectorAll(".tab-link");
-
-      tabLinks.forEach(function(link) {
-        link.addEventListener("click", function(event) {
-          event.preventDefault();
-          var dropdownContent = this.parentElement.nextElementSibling;
-          if (dropdownContent.style.display === "none" || dropdownContent.style.display === "") {
-            // Close other dropdowns
-            closeDropdowns();
-            dropdownContent.style.display = "block";
-          } else {
-            dropdownContent.style.display = "none";
-          }
-        });
+    menuButtons.forEach(function (button) {
+      const menu = document.getElementById(button.getAttribute('aria-controls'));
+      button.addEventListener('click', function () {
+        const wasOpen = button.getAttribute('aria-expanded') === 'true';
+        closeDropdowns(button);
+        button.setAttribute('aria-expanded', wasOpen ? 'false' : 'true');
+        menu.hidden = wasOpen;
       });
+    });
 
-      // Close dropdowns when clicking outside
-      document.addEventListener("click", function(event) {
-        var target = event.target;
-        var isInsideDropdown = target.closest(".dropdown");
-        if (!isInsideDropdown) {
+    document.addEventListener('click', function (event) {
+      if (!event.target.closest('.dropdown')) { closeDropdowns(); }
+    });
+
+    document.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        const openButton = document.querySelector('.tab-link[aria-expanded="true"]');
+        if (openButton) {
           closeDropdowns();
+          openButton.focus();
         }
-      });
+      }
+    });
 
-    }); 
+    document.querySelector('header').addEventListener('focusout', function (event) {
+      if (event.relatedTarget && !event.relatedTarget.closest('.dropdown')) { closeDropdowns(); }
+    });
+
+    
+    // --- Legend helper ---
+    function buildLegendSection(title, items) {
+      let html = '<p class="legend-title">' + title + '</p><ul>';
+      items.forEach(function (item) {
+        html += '<li><i aria-hidden="true" style="background:' + item.color + '"></i><span>' + item.label + '</span></li>';
+      });
+      return html + '</ul>';
+    }
+
+    // --- County list view: keyboard- and screen-reader-friendly alternative to clicking the map ---
+    const mapElement = document.getElementById('map');
+    const dataPanel = document.getElementById('data-panel');
+    const tableToggle = document.getElementById('table-toggle');
+
+    function setTableVisible(show) {
+      dataPanel.hidden = !show;
+      tableToggle.setAttribute('aria-pressed', show ? 'true' : 'false');
+      if (show) {
+        mapElement.setAttribute('inert', '');
+        dataPanel.scrollTop = 0;
+        dataPanel.focus();
+      } else {
+        mapElement.removeAttribute('inert');
+      }
+    }
+
+    tableToggle.addEventListener('click', function () { setTableVisible(dataPanel.hidden); });
+
+    dataPanel.addEventListener('keydown', function (event) {
+      if (event.key === 'Escape') {
+        setTableVisible(false);
+        tableToggle.focus();
+      }
+    });
+
+    // tell all users if the county data fails to load
+    $(document).on('ajaxError', function () {
+      const message = document.getElementById('load-error');
+      message.textContent = 'The county boundary data could not be loaded. Please try reloading the page, or use the county list view.';
+      message.hidden = false;
+    });
 
     // create legend for the progress
     const progressLegend = L.control({
@@ -300,12 +656,13 @@
     progressLegend.onAdd = function(map) {
 
       const div = L.DomUtil.create('div', 'info legend');
+      div.setAttribute('role', 'group');
+      div.setAttribute('aria-label', 'Map legend');
 
-      // generate a label with a colored square for each
-      div.innerHTML +=
-        "<b style='font-size:14px'>Data Availability</b>" + '<br>' + '<i style="background:#C4A484"></i> ' +
-        'Completed' + '<br>' + '<i style="background:skyblue"></i> ' +
-        'In Progress';
+      div.innerHTML = buildLegendSection('Data Availability', [
+        { label: 'Completed', color: '#C4A484' },
+        { label: 'In Progress', color: 'skyblue' }
+      ]);
 
       return div;
 
@@ -365,7 +722,7 @@
           // if feature.properties.county is in the dataCounties list
           if (dataCounties.includes(feature.properties.county)) {
             // bind the tooltip to the layer
-            layer.bindTooltip('<h3>' + feature.properties.county + ' County<br><i style="font-size:12px">Click to see map</i></h3>', {
+            layer.bindTooltip('<div class=popup-text>' + feature.properties.county + ' County<br><i style="font-size:0.875rem">Click to see map</i></div>', {
               sticky: true,
               direction: 'top',
               opacity: 0.9,
@@ -404,7 +761,7 @@
             } 
           }   else {
             // bind the tooltip to the layer
-            layer.bindTooltip('<h3>' + feature.properties.county + ' County<br><i style="font-size:12px">Data not available</i></h3>', {
+            layer.bindTooltip('<div class=popup-text>' + feature.properties.county + ' County<br><i style="font-size:0.875rem">Data not available</i></div>', {
               sticky: true,
               direction: 'top',
               opacity: 0.9,
@@ -459,6 +816,23 @@
 
       // Add all counties to the map
       allCounties.addTo(map);
+
+      // give the search box and its buttons accessible names
+      const searchInput = document.querySelector('.leaflet-control-search .search-input');
+      if (searchInput) {
+        searchInput.setAttribute('aria-label', 'Search for a county with map data');
+        searchInput.setAttribute('autocomplete', 'off');
+      }
+      const searchButton = document.querySelector('.leaflet-control-search .search-button');
+      if (searchButton) {
+        searchButton.setAttribute('role', 'button');
+        searchButton.setAttribute('aria-label', 'Search');
+      }
+      const searchCancel = document.querySelector('.leaflet-control-search .search-cancel');
+      if (searchCancel) {
+        searchCancel.setAttribute('role', 'button');
+        searchCancel.setAttribute('aria-label', 'Clear search');
+      }
 
     });
   </script>

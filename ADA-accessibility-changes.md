@@ -107,3 +107,21 @@ The key lives in one `cartoApiKey` constant near the basemap code on each page, 
 - If you still see the watermark after deploying, force-refresh; browsers and CARTO's CDN both cache tiles.
 - The free tier covers 5 million tile requests per month.
 - I kept the existing `{r}` retina suffix and `{s}` subdomains. If tiles ever fail to load, try the plain `{z}/{x}/{y}.png` form from CARTO's docs.
+
+---
+
+## 8. Round 2: scanner findings (font size, target size, line height, image alt, label mismatch)
+
+A follow-up scan flagged five issues. Most came from **Leaflet's own default stylesheet**, which the first round didn't override. Fixes were applied to all seven pages.
+
+| Scanner finding | Cause | Fix |
+|---|---|---|
+| **Font size is fixed** (44) | Leaflet's CSS sets fixed `px` fonts on the map container, popups, tooltips, attribution, zoom buttons, scale and layer control; the search plugin does too | Overrode each of these with `rem` sizes. No fixed-`px` font sizes remain in the pages' own CSS |
+| **Line height is below minimum value** (19) | Leaflet popups (1.4), my legend/header/popup text (1.2-1.4) | All text now has a line height of at least 1.5, including popups, tooltips, legend, header, search box and tables |
+| **Interactive element does not meet enhanced size** (92), WCAG 2.5.5 (AAA), 44 x 44 px | Leaflet zoom buttons (30px), popup close button (18px), layer-control checkboxes, menu links, toolbar button, slider, scanned-covenant links, search box/buttons | Zoom buttons 44px; popup close button 44px; **layer-control checkboxes now have a 44 x 44 hit area** (custom-drawn 22px box with a checkmark, still a real `<input type="checkbox">`); every menu link, toolbar button, site-title link, skip link, table link and popup link is at least 44px tall; slider is 44px tall; search input, search and clear buttons and result rows are 44px |
+| **Image missing a text alternative** (1) | None of the seven pages contains an `<img>` in its own markup, so this is probably an image Leaflet creates at runtime or an image on a page I haven't seen | Map tiles are now created with `alt=""`, and a small observer adds `alt=""` and `role="presentation"` to any other image Leaflet adds inside the map |
+| **Visible label and accessible name do not match** (4) | Not identified with certainty (see below) | On the landing page the search box's visible placeholder and its accessible name are now the same text ("Search for a county") |
+
+**Still needs your input.** I can't tell from the summary screenshot which elements the "image missing a text alternative" and "label and name do not match" findings point to. If they persist, open **View all issues** in the scanner, expand those two findings, and send me the page URL plus the element/selector or HTML snippet shown. A likely suspect for the label finding is the zoom buttons (visible "+"/"−" with names "Zoom in"/"Zoom out"), and the image may be on one of the site pages I haven't received (for example `introduction.html`).
+
+**Visual changes to expect.** The zoom buttons, layer-control rows and legend are larger, and the checkboxes in the layer control are custom-drawn. The 44px minimum is WCAG 2.5.5 (Level AAA); the Level AA requirement (2.5.8) is 24px, so this goes beyond what is strictly required. The tiny attribution links ("OpenStreetMap", "CARTO") are inline text links and were left at text size.
